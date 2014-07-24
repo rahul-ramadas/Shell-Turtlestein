@@ -74,16 +74,16 @@ def run_cmd(cwd, cmd, wait, input_str=None):
                                      shell=shell,
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE,
-                                     stdin=(subprocess.PIPE if input_str else None))
-        encoded_input = None if input_str == None else input_str.encode('utf8')
-        output, error = proc.communicate(encoded_input)
+                                     stdin=(subprocess.PIPE if input_str else None),
+                                     universal_newlines=True)
+        output, error = proc.communicate(input_str)
         return_code = proc.poll()
         if return_code:
             show_in_output_panel("`%s` exited with a status code of %s\n\n%s"
                                  % (cmd, return_code, error))
             return (False, None)
         else:
-            return (True, output.decode('utf8'))
+            return (True, output)
     else:
         subprocess.Popen(cmd, cwd=cwd, shell=shell)
         return (False, None)
@@ -153,8 +153,8 @@ class ShellPromptCommand(sublime_plugin.WindowCommand):
                 # Since Sublime's build system doesn't support piping to STDIN
                 # directly, use a tempfile.
                 text = "".join([active_view.substr(r) for r in input_regions])
-                temp = tempfile.NamedTemporaryFile(delete=False)
-                temp.write(text.encode('utf8'))
+                temp = tempfile.NamedTemporaryFile(delete=False, mode='w+')
+                temp.write(text)
                 shell_cmd = "%s < %s" % (shell_cmd, pipes.quote(temp.name))
             exec_args = settings['exec_args']
             exec_args.update({'cmd': shell_cmd, 'shell': True, 'working_dir': cwd})
